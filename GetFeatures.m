@@ -2,10 +2,10 @@ clc;
 clear;
 
 % Load the original image 
-% img = imread('Hand Fractured X ray images/hand1.jpg'); 
-% InfoImage = imfinfo('Hand Fractured X ray images/hand1.jpg');
-img = imread('images/train_b5.tif'); 
-InfoImage = imfinfo('images/train_b5.tif');
+filename = 'sample.jpg';
+
+img = imread(filename); 
+InfoImage = imfinfo(filename);
 
 % Convert image RGB to GRAY
 if strcmp(InfoImage.ColorType, 'grayscale') == 1
@@ -24,18 +24,7 @@ flt = ones(3,3)/9;
 re_noise = filter2(flt, gray);
 
 % Detect the Egde
-Gx = [-1 0 1; 
-      -2 0 2;
-      -1 0 1];
-
-Gy = [ 1 2 1; 
-       0 0 0;
-      -1 -2 -1];
-
-edge_x = filter2(Gx,gray);
-edge_y = filter2(Gy,gray);
-
-edge = abs(edge_x) + abs(edge_y);
+edge = edge(gray, 'canny');
 
 
 % % Display the result image
@@ -92,30 +81,11 @@ edge = abs(edge_x) + abs(edge_y);
 
 M = edge;
 
-options.nbscales = ceil(log2(size(M,1))-2);
-options.n = width;
-C = perform_curvelet_transform(M,options);
-
 options.wavelet_type = 'daubechies'; % kind of wavelet
 options.wavelet_vm = 4; % number of vanishing moments
 Jmin = 7; %  minimum scale
 % At last we actually perform the transform.
 MW = perform_wavelet_transform(M, Jmin, +1, options);
-M_HL = MW(1:256, 257:512);
-M_LH = MW(257:512, 1:256);
 
 figure;
 imshow(MW)
-
-
-glcm_edge = graycomatrix(edge);
-stat_edge = graycoprops(glcm_edge);
-
-glcm = graycomatrix(M_HL);
-stat = graycoprops(glcm);
-
-stat1 = [stat.Contrast, stat.Correlation, stat.Energy, stat.Homogeneity];
-stat2 = [stat_edge.Contrast, stat_edge.Correlation, stat_edge.Energy, stat_edge.Homogeneity];
-line = [reshape(C{1,1}{1},[1, 121]), stat1, stat2]
-
-save('line.mat','line');
